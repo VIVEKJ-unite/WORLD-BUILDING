@@ -1,0 +1,7 @@
+n = int(input("enter a number"))
+binary = bin(n)
+print(f"binary of {n} is : ",binary)
+octal= oct(n)
+print(f"octal of {n} is ", octal)
+hexadecimal= hex(n)
+print(f"hexadecimal of {n} is ", hexadecimal)
