@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>To-Do App</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f0f2f5;
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            font-size: 1em; /* Increase font size */
+        }
+        .dashboard {
+            position: absolute;
+            top: 10px; /* Increase padding */
+            right: 10px; /* Increase padding */
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+        }
+        .dashboard i {
+            cursor: pointer;
+            margin: 0 10px; /* Increase margin */
+            transition: color 0.3s;
+            font-size: 1em; /* Increase icon size */
+        }
+        .container {
+            background: #fff;
+            padding: 20px; /* Increase padding */
+            border-radius: 10px; /* Increase border radius */
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* Increase shadow */
+            width: 65%; /* Increase width */
+            max-width: 800px; /* Increase max-width */
+            display: flex;
+            flex-direction: column;
+        }
+        h2 {
+            margin-bottom: 20px; /* Increase margin */
+            color: #333;
+            text-align: center;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px; /* Increase padding */
+            border: 1px solid #ddd;
+            border-radius: 5px; /* Increase border radius */
+            margin-bottom: 10px; /* Increase margin */
+            font-size: 1em; /* Increase font size */
+        }
+        button {
+            padding: 10px 15px; /* Increase padding */
+            border: none;
+            background: #007bff;
+            color: #fff;
+            border-radius: 5px; /* Increase border radius */
+            cursor: pointer;
+            transition: background 0.3s;
+            font-size: 1em; /* Increase font size */
+            width: 100%;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px; /* Increase margin */
+        }
+        th, td {
+            padding: 10px; /* Increase padding */
+            border: 1px solid #ddd;
+            text-align: center;
+            font-size: 1em; /* Increase font size */
+        }
+        .completed {
+            text-decoration: line-through;
+            color: #888;
+        }
+        .fa-check, .fa-times {
+            cursor: pointer;
+            margin-left: 10px; /* Increase margin */
+            transition: color 0.3s;
+            font-size: 1em; /* Increase icon size */
+        }
+        .fa-check:hover {
+            color: #28a745;
+        }
+        .fa-times:hover {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <i class="fa fa-home"></i>
+        <i class="fa fa-user"></i>
+        <i class="fa fa-cog"></i>
+        <i class="fa fa-sign-out-alt"></i>
+    </div>
+    <div class="container">
+        <h2>To-Do List</h2>
+        <input type="text" id="taskInput" placeholder="Enter a task">
+        <button onclick="addTask()">Add</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>Task</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="taskList"></tbody>
+        </table>
+    </div>
+    <script>
+        async function fetchTasks() {
+            const response = await fetch('/tasks');
+            const tasks = await response.json();
+            document.getElementById('taskList').innerHTML = tasks.map(task => `
+                <tr class="${task.completed ? 'completed' : ''}">
+                    <td>${task.task}</td>
+                    <td>
+                        <i class="fa fa-check" onclick="toggleTask(${task.id})"></i>
+                        <i class="fa fa-times" onclick="deleteTask(${task.id})"></i>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        async function addTask() {
+            const task = document.getElementById('taskInput').value;
+            if (task) {
+                try {
+                    const response = await fetch('/add', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({task})
+                    });
+                    if (response.ok) {
+                        const newTask = await response.json();
+                        const taskList = document.getElementById('taskList');
+                        const newRow = document.createElement('tr');
+                        newRow.innerHTML = `
+                            <td>${newTask.task}</td>
+                            <td>
+                                <i class="fa fa-check" onclick="toggleTask(${newTask.id})"></i>
+                                <i class="fa fa-times" onclick="deleteTask(${newTask.id})"></i>
+                            </td>
+                        `;
+                        taskList.appendChild(newRow);
+                        document.getElementById('taskInput').value = '';
+                    } else {
+                        const errorData = await response.json();
+                        console.error('Failed to add task:', errorData.message);
+                    }
+                } catch (error) {
+                    console.error('Error adding task:', error);
+                }
+            }
+        }
+        async function deleteTask(id) {
+            await fetch(`/delete/${id}`, { method: 'DELETE' });
+            fetchTasks();
+        }
+        async function toggleTask(id) {
+            await fetch(`/toggle/${id}`, { method: 'PUT' });
+            fetchTasks();
+        }
+        fetchTasks();
+    </script>
+</body>
+</html>
